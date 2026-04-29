@@ -10,6 +10,17 @@ const db = {
   boards: []
 };
 
+function resetStore() {
+  nextBoardId = 1;
+  nextListId = 1;
+  nextCardId = 1;
+  nextMemberId = 1;
+  nextCommentId = 1;
+  nextChecklistItemId = 1;
+  nextActivityId = 1;
+  db.boards = [];
+}
+
 function createBoard(name) {
   const board = {
     id: String(nextBoardId++),
@@ -142,6 +153,51 @@ function insertCardAt(list, card, targetIndex) {
   list.cards.splice(safeIndex, 0, card);
 }
 
+function moveCardToList(cardResult, listResult, targetIndex) {
+  const isCrossBoardMove = cardResult.board.id !== listResult.board.id;
+
+  if (isCrossBoardMove) {
+    cardResult.card.assigneeIds = cardResult.card.assigneeIds.filter((memberId) =>
+      Boolean(findMember(listResult.board, memberId))
+    );
+  }
+
+  removeCard(cardResult.list, cardResult.card.id);
+
+  if (targetIndex === undefined) {
+    listResult.list.cards.push(cardResult.card);
+  } else {
+    insertCardAt(listResult.list, cardResult.card, targetIndex);
+  }
+
+  const activityDetails = {
+    cardId: cardResult.card.id,
+    fromBoardId: cardResult.board.id,
+    toBoardId: listResult.board.id,
+    fromListId: cardResult.list.id,
+    toListId: listResult.list.id,
+    targetIndex: targetIndex ?? null
+  };
+
+  addBoardActivity(cardResult.board, "card.moved", {
+    boardId: cardResult.board.id,
+    ...activityDetails
+  });
+
+  if (isCrossBoardMove) {
+    addBoardActivity(listResult.board, "card.moved", {
+      boardId: listResult.board.id,
+      ...activityDetails
+    });
+  }
+
+  return {
+    card: cardResult.card,
+    fromListId: cardResult.list.id,
+    toListId: listResult.list.id
+  };
+}
+
 function createComment(card, text, author = "system") {
   const comment = {
     id: String(nextCommentId++),
@@ -230,11 +286,13 @@ module.exports = {
   getBoards,
   insertCardAt,
   insertListAt,
+  moveCardToList,
   removeChecklistItem,
   removeBoard,
   removeComment,
   removeMember,
   removeList,
   removeCard,
+  resetStore,
   searchCards
 };

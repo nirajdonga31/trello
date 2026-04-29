@@ -16,7 +16,7 @@ const {
   findList,
   findMember,
   findComment,
-  insertCardAt,
+  moveCardToList,
   removeChecklistItem,
   removeComment,
   removeCard,
@@ -151,25 +151,13 @@ router.patch("/cards/:cardId/move", (req, res) => {
     return res.status(400).json({ error: "targetIndex must be a non-negative integer" });
   }
 
-  removeCard(cardResult.list, cardResult.card.id);
-  if (targetIndex === undefined) {
-    listResult.list.cards.push(cardResult.card);
-  } else {
-    insertCardAt(listResult.list, cardResult.card, targetIndex);
-  }
-  addBoardActivity(cardResult.board, "card.moved", {
-    boardId: cardResult.board.id,
-    cardId: cardResult.card.id,
-    fromListId: cardResult.list.id,
-    toListId: listResult.list.id,
-    targetIndex: targetIndex ?? null
-  });
+  const moveResult = moveCardToList(cardResult, listResult, targetIndex);
 
   res.json({
     message: "Card moved",
-    card: cardResult.card,
-    fromListId: cardResult.list.id,
-    toListId: listResult.list.id
+    card: moveResult.card,
+    fromListId: moveResult.fromListId,
+    toListId: moveResult.toListId
   });
 });
 
