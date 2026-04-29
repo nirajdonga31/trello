@@ -131,6 +131,31 @@ function createCard(list, title, description, dueDate = null, labels = []) {
   return card;
 }
 
+function duplicateCard(list, sourceCard) {
+  const duplicate = createCard(
+    list,
+    `${sourceCard.title} Copy`,
+    sourceCard.description,
+    sourceCard.dueDate,
+    [...sourceCard.labels]
+  );
+
+  duplicate.assigneeIds = [...sourceCard.assigneeIds];
+  duplicate.comments = sourceCard.comments.map((comment) => ({
+    id: String(nextCommentId++),
+    text: comment.text,
+    author: comment.author,
+    createdAt: comment.createdAt
+  }));
+  duplicate.checklist = sourceCard.checklist.map((item) => ({
+    id: String(nextChecklistItemId++),
+    text: item.text,
+    done: item.done
+  }));
+
+  return duplicate;
+}
+
 function findCard(cardId) {
   for (const board of db.boards) {
     for (const list of board.lists) {
@@ -277,6 +302,7 @@ module.exports = {
   createComment,
   createList,
   createMember,
+  duplicateCard,
   findBoard,
   findCard,
   findChecklistItem,

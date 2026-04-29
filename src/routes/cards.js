@@ -11,6 +11,7 @@ const {
   createChecklistItem,
   createCard,
   createComment,
+  duplicateCard,
   findCard,
   findChecklistItem,
   findList,
@@ -192,27 +193,7 @@ router.post("/cards/:cardId/duplicate", (req, res) => {
     return res.status(404).json({ error: "Card not found" });
   }
 
-  const duplicate = createCard(
-    result.list,
-    `${result.card.title} Copy`,
-    result.card.description,
-    result.card.dueDate,
-    [...result.card.labels]
-  );
-
-  duplicate.assigneeIds = [...result.card.assigneeIds];
-  duplicate.comments = result.card.comments.map((comment) => ({
-    id: comment.id,
-    text: comment.text,
-    author: comment.author,
-    createdAt: comment.createdAt
-  }));
-  duplicate.checklist = result.card.checklist.map((item) => ({
-    id: item.id,
-    text: item.text,
-    done: item.done
-  }));
-  duplicate.archived = false;
+  const duplicate = duplicateCard(result.list, result.card);
 
   addBoardActivity(result.board, "card.duplicated", {
     boardId: result.board.id,
